@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Medication Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <a href="index.html" class="logo">
+        <div class="pill-icon"></div>
+        <div>
+          <div>Medication Tracker</div>
+          <div class="tagline">Reminders · Adherence · Care</div>
+        </div>
+      </a>
+    </header>
+
+    <div class="card">
+      <h1>Welcome</h1>
+      <p class="small-text muted">Medication Reminder & Adherence Tracker with AI Chatbot and Caregiver Dashboard.</p>
+
+      <div class="divider"></div>
+
+      <a href="login.html" class="btn">Go to Login</a>
+
+      <div class="divider"></div>
+
+      <h3>Modules</h3>
+      <div class="module-grid">
+        <a href="login.html" class="module-card">Login / Register</a>
+        <a href="dashboard.html" class="module-card">Patient Dashboard</a>
+        <a href="ocr.html" class="module-card">OCR Scan</a>
+        <a href="medications.html" class="module-card">Medications</a>
+        <a href="adherence.html" class="module-card">Adherence</a>
+        <a href="chatbot.html" class="module-card">AI Chatbot</a>
+        <a href="drug-interactions.html" class="module-card">Drug Interactions</a>
+        <a href="caregiver.html" class="module-card">Caregiver Dashboard</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    if (getCurrentUser()) {
+      const u = getCurrentUser();
+      window.location.href = u.role === "caregiver" ? "caregiver.html" : "dashboard.html";
+    }
+  </script>
+</body>
+</html>

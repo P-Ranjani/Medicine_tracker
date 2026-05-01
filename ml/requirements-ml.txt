@@ -1,0 +1,4 @@
+# ML / training dependencies for prescription NER model
+spacy>=3.7.0
+# Optional: uncomment for GPU
+# spacy[cuda12x]

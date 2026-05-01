@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login - Medication Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <a href="login.html" class="logo">
+        <div class="pill-icon"></div>
+        <div>
+          <div>Medication Tracker</div>
+          <div class="tagline">Reminders · Adherence · Care</div>
+        </div>
+      </a>
+    </header>
+
+    <div class="card">
+      <h1>Sign in</h1>
+      <p class="small-text muted">Register a new account or log in to continue.</p>
+
+      <div class="divider"></div>
+
+      <h2>Register</h2>
+      <div class="flex" style="margin-bottom: 10px;">
+        <div class="pill-toggle" id="roleToggle">
+          <button type="button" data-role="patient" class="active">Patient</button>
+          <button type="button" data-role="caregiver">Caregiver</button>
+        </div>
+      </div>
+
+      <div class="stack">
+        <label for="regName">Name</label>
+        <input id="regName" type="text" placeholder="Ranjani" />
+      </div>
+      <div class="stack">
+        <label for="regEmail">Email</label>
+        <input id="regEmail" type="email" placeholder="you@example.com" />
+      </div>
+      <div class="stack">
+        <label for="regPassword">Password</label>
+        <input id="regPassword" type="password" placeholder="••••••••" />
+      </div>
+      <div id="caregiverLinkFields" class="stack">
+        <label for="caregiverEmail">Caregiver email (optional)</label>
+        <input id="caregiverEmail" type="email" placeholder="mother@example.com" />
+        <label for="relationship">Relationship</label>
+        <input id="relationship" type="text" placeholder="Mother, Father, Spouse..." />
+        <span class="small-text muted">Only when registering as patient.</span>
+      </div>
+      <button id="registerBtn" class="btn">Create account</button>
+      <div id="authError" class="error"></div>
+
+      <div class="divider"></div>
+
+      <h2>Login</h2>
+      <div class="stack">
+        <label for="loginEmail">Email</label>
+        <input id="loginEmail" type="email" placeholder="you@example.com" />
+      </div>
+      <div class="stack">
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" placeholder="••••••••" />
+      </div>
+      <button id="loginBtn" class="btn secondary">Login</button>
+      <div id="loginError" class="error"></div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const roleToggle = document.getElementById("roleToggle");
+    const caregiverLinkFields = document.getElementById("caregiverLinkFields");
+    let selectedRole = "patient";
+
+    roleToggle.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-role]");
+      if (!btn) return;
+      selectedRole = btn.dataset.role;
+      roleToggle.querySelectorAll("button").forEach((b) =>
+        b.classList.toggle("active", b === btn)
+      );
+      caregiverLinkFields.classList.toggle("hidden", selectedRole !== "patient");
+    });
+
+    document.getElementById("registerBtn").addEventListener("click", async () => {
+      const err = document.getElementById("authError");
+      err.textContent = "";
+      const name = document.getElementById("regName").value.trim();
+      const email = document.getElementById("regEmail").value.trim();
+      const password = document.getElementById("regPassword").value;
+      const caregiverEmail = document.getElementById("caregiverEmail").value.trim();
+      const relationship = document.getElementById("relationship").value.trim();
+
+      if (!name || !email || !password) {
+        err.textContent = "Name, email and password are required.";
+        return;
+      }
+      try {
+        const body = { name, email, password, role: selectedRole };
+        if (selectedRole === "patient" && caregiverEmail) {
+          body.caregiver_email = caregiverEmail;
+          if (relationship) body.relationship = relationship;
+        }
+        const data = await apiRequest("/api/register", {
+          method: "POST",
+          body: JSON.stringify(body),
+        });
+        setCurrentUser(data.user);
+        window.location.href = data.user.role === "caregiver" ? "caregiver.html" : "dashboard.html";
+      } catch (e) {
+        err.textContent = e.message || "Registration failed.";
+      }
+    });
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const err = document.getElementById("loginError");
+      err.textContent = "";
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+      if (!email || !password) {
+        err.textContent = "Email and password are required.";
+        return;
+      }
+      try {
+        const data = await apiRequest("/api/login", {
+          method: "POST",
+          body: JSON.stringify({ email, password }),
+        });
+        setCurrentUser(data.user);
+        window.location.href = data.user.role === "caregiver" ? "caregiver.html" : "dashboard.html";
+      } catch (e) {
+        err.textContent = e.message || "Login failed.";
+      }
+    });
+  </script>
+</body>
+</html>

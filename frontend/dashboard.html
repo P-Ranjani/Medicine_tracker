@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard - Medication Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <a href="dashboard.html" class="logo">
+        <div class="pill-icon"></div>
+        <div>
+          <div>Medication Tracker</div>
+          <div class="tagline">Reminders · Adherence · Care</div>
+        </div>
+      </a>
+      <div class="flex">
+        <span id="userLabel" class="small-text muted"></span>
+        <a href="login.html" class="btn secondary small" onclick="setCurrentUser(null)">Logout</a>
+      </div>
+    </header>
+
+    <nav>
+      <a href="dashboard.html" class="active">Dashboard</a>
+      <a href="ocr.html">OCR Scan</a>
+      <a href="medications.html">Medications</a>
+      <a href="adherence.html">Adherence</a>
+      <a href="chatbot.html">Chatbot</a>
+      <a href="drug-interactions.html">Drug Interactions</a>
+      <a href="caregiver.html">Caregiver</a>
+    </nav>
+
+    <div class="card">
+      <h1>Patient Home</h1>
+      <p class="small-text muted">Welcome back. Manage your medications and stay on track.</p>
+
+      <div class="home-intro">
+        <strong>About this app</strong>
+        <p>Medication Tracker helps you take your medicines on time and keeps a record of your adherence. You can:</p>
+        <ul>
+          <li><strong>Scan prescriptions</strong> — Upload a photo of your prescription to extract medicine names and dosages.</li>
+          <li><strong>Build your schedule</strong> — Add medications with times and dates; the app supports multiple medicines at once.</li>
+          <li><strong>Track adherence</strong> — Mark each dose as taken, missed, or skipped and see your adherence percentage.</li>
+          <li><strong>Check interactions</strong> — See potential drug interactions (informational only; always ask your doctor).</li>
+          <li><strong>Ask the AI chatbot</strong> — Get simple answers about what your medicines do and side effects.</li>
+          <li><strong>Stay connected</strong> — Link a caregiver (e.g. family) so they can view your medications and get alerts if you miss a dose.</li>
+        </ul>
+      </div>
+
+      <div class="reminder-box">
+        <h3>🔔 Reminders for you</h3>
+        <p><strong>How reminders work:</strong> The app uses your medication schedule to remind you when it’s time to take your medicine. Reminders can be sent as browser notifications, email, or in-app alerts so you don’t miss a dose.</p>
+        <p>Make sure you’ve added your medications and set the correct times in <a href="medications.html" style="color: var(--accent);">Medications</a>. Then record each dose in <a href="adherence.html" style="color: var(--accent);">Adherence</a> so your caregiver can see how you’re doing and you can track your progress.</p>
+        <span class="small-text muted">Tip: Allow notifications in your browser to get reminder alerts.</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2>Quick access</h2>
+      <div class="module-grid">
+        <a href="ocr.html" class="module-card">
+          <strong>📷 OCR Scan</strong>
+          <p class="small-text" style="margin: 6px 0 0;">Upload prescription image to extract medicines</p>
+        </a>
+        <a href="medications.html" class="module-card">
+          <strong>💊 Medications</strong>
+          <p class="small-text" style="margin: 6px 0 0;">Add and manage your medication list</p>
+        </a>
+        <a href="adherence.html" class="module-card">
+          <strong>✅ Adherence</strong>
+          <p class="small-text" style="margin: 6px 0 0;">Record doses and view adherence summary</p>
+        </a>
+        <a href="chatbot.html" class="module-card">
+          <strong>🤖 AI Chatbot</strong>
+          <p class="small-text" style="margin: 6px 0 0;">Ask questions about your medicines</p>
+        </a>
+        <a href="drug-interactions.html" class="module-card">
+          <strong>⚠️ Drug Interactions</strong>
+          <p class="small-text" style="margin: 6px 0 0;">Check for potential drug interactions</p>
+        </a>
+        <a href="caregiver.html" class="module-card">
+          <strong>👥 Caregiver</strong>
+          <p class="small-text" style="margin: 6px 0 0;">Caregiver dashboard (for caregivers)</p>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const user = requirePatient();
+    if (user) {
+      document.getElementById("userLabel").textContent = `${user.name} · ${user.email}`;
+    }
+  </script>
+</body>
+</html>

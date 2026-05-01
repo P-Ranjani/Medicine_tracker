@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>OCR Scan - Medication Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <a href="dashboard.html" class="logo">
+        <div class="pill-icon"></div>
+        <div>
+          <div>Medication Tracker</div>
+          <div class="tagline">Reminders · Adherence · Care</div>
+        </div>
+      </a>
+      <div class="flex">
+        <span id="userLabel" class="small-text muted"></span>
+        <a href="login.html" class="btn secondary small" onclick="setCurrentUser(null)">Logout</a>
+      </div>
+    </header>
+
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="ocr.html" class="active">OCR Scan</a>
+      <a href="medications.html">Medications</a>
+      <a href="adherence.html">Adherence</a>
+      <a href="chatbot.html">Chatbot</a>
+      <a href="drug-interactions.html">Drug Interactions</a>
+      <a href="caregiver.html">Caregiver</a>
+    </nav>
+
+    <div class="card">
+      <h1>Prescription OCR Scan</h1>
+      <p class="small-text muted">Upload a prescription image to extract medicine names and dosages. Requires Tesseract OCR installed.</p>
+
+      <div class="divider"></div>
+
+      <div class="stack">
+        <label for="prescriptionFile">Select prescription image</label>
+        <input id="prescriptionFile" type="file" accept="image/*" />
+      </div>
+      <button id="uploadBtn" class="btn">Scan prescription</button>
+
+      <div class="divider"></div>
+
+      <h3>Result</h3>
+      <div id="ocrResult" class="log small-text hidden"></div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    requirePatient();
+    document.getElementById("userLabel").textContent = getCurrentUser()
+      ? `${getCurrentUser().name} · ${getCurrentUser().email}` : "";
+
+    document.getElementById("uploadBtn").addEventListener("click", async () => {
+      const fileInput = document.getElementById("prescriptionFile");
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("Choose an image file first.");
+        return;
+      }
+      const result = document.getElementById("ocrResult");
+      result.textContent = "Scanning prescription...";
+      result.classList.remove("hidden");
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const data = await apiRequest("/api/ocr/scan", {
+          method: "POST",
+          body: formData,
+        });
+        const meds = (data.parsed_medications || [])
+          .map((m) => {
+            let line = `- ${m.medicine_name} ${m.dosage || ""}`;
+            if (m.frequency || m.when || m.duration || m.precautions) {
+              const parts = [];
+              if (m.frequency) parts.push(`Frequency: ${m.frequency}`);
+              if (m.when) parts.push(`When: ${m.when}`);
+              if (m.duration) parts.push(`Duration: ${m.duration}`);
+              if (m.precautions) parts.push(`Precautions: ${m.precautions}`);
+              line += "\n  " + parts.join(" | ");
+            } else {
+              line += " (" + (m.schedule_text || "schedule not parsed") + ")";
+            }
+            return line;
+          })
+          .join("\n\n");
+        result.textContent = "Raw text:\n" + data.raw_text + "\n\nParsed medications:\n" + (meds || "None");
+      } catch (e) {
+        result.textContent = "Failed to scan: " + e.message;
+      }
+    });
+  </script>
+</body>
+</html>

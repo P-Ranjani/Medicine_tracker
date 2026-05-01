@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Medications - Medication Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <a href="dashboard.html" class="logo">
+        <div class="pill-icon"></div>
+        <div>
+          <div>Medication Tracker</div>
+          <div class="tagline">Reminders · Adherence · Care</div>
+        </div>
+      </a>
+      <div class="flex">
+        <span id="userLabel" class="small-text muted"></span>
+        <a href="login.html" class="btn secondary small" onclick="setCurrentUser(null)">Logout</a>
+      </div>
+    </header>
+
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="ocr.html">OCR Scan</a>
+      <a href="medications.html" class="active">Medications</a>
+      <a href="adherence.html">Adherence</a>
+      <a href="chatbot.html">Chatbot</a>
+      <a href="drug-interactions.html">Drug Interactions</a>
+      <a href="caregiver.html">Caregiver</a>
+    </nav>
+
+    <div class="card">
+      <h1>Add Medication</h1>
+      <p class="small-text muted">Add a new medicine to your schedule.</p>
+
+      <div class="divider"></div>
+
+      <div class="stack">
+        <label for="medName">Medicine name</label>
+        <input id="medName" type="text" placeholder="Paracetamol" />
+      </div>
+      <div class="stack">
+        <label for="medDose">Dosage</label>
+        <input id="medDose" type="text" placeholder="500mg" />
+      </div>
+      <div class="stack">
+        <label for="medTime">Time (24h)</label>
+        <input id="medTime" type="time" />
+      </div>
+      <div class="flex" style="gap: 12px;">
+        <div class="stack" style="flex: 1;">
+          <label for="medStart">Start date</label>
+          <input id="medStart" type="date" />
+        </div>
+        <div class="stack" style="flex: 1;">
+          <label for="medEnd">End date (optional)</label>
+          <input id="medEnd" type="date" />
+        </div>
+      </div>
+      <button id="addMedBtn" class="btn">Save medication</button>
+
+      <div class="divider"></div>
+
+      <h3>Your medications</h3>
+      <button id="refreshBtn" class="btn small secondary">Refresh list</button>
+      <div id="medicationList" class="small-text muted" style="margin-top: 10px;"></div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    requirePatient();
+    document.getElementById("userLabel").textContent = getCurrentUser()
+      ? `${getCurrentUser().name} · ${getCurrentUser().email}` : "";
+
+    async function loadMedications() {
+      const container = document.getElementById("medicationList");
+      try {
+        const data = await apiRequest("/api/medications");
+        const meds = data.medications || [];
+        if (!meds.length) {
+          container.textContent = "No medications saved yet.";
+          return;
+        }
+        container.innerHTML = meds
+          .map((m) => {
+            const dates = (m.start_date || m.end_date)
+              ? ` · ${m.start_date || ""}${m.end_date ? " → " + m.end_date : ""}`
+              : "";
+            return `<div style="margin-bottom: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;">
+              <strong>${m.medicine_name}</strong> ${m.dosage || ""} · <span class="tag">${m.schedule_time}</span>${dates}
+            </div>`;
+          })
+          .join("");
+        container.classList.remove("muted");
+      } catch (e) {
+        container.textContent = "Failed to load: " + e.message;
+      }
+    }
+
+    document.getElementById("addMedBtn").addEventListener("click", async () => {
+      const name = document.getElementById("medName").value.trim();
+      const dose = document.getElementById("medDose").value.trim();
+      const timeVal = document.getElementById("medTime").value;
+      const start = document.getElementById("medStart").value;
+      const end = document.getElementById("medEnd").value;
+
+      if (!name || !timeVal) {
+        alert("Medicine name and time are required.");
+        return;
+      }
+      try {
+        await apiRequest("/api/medications", {
+          method: "POST",
+          body: JSON.stringify({
+            medications: [{
+              medicine_name: name,
+              dosage: dose || null,
+              schedule_time: timeVal,
+              start_date: start || null,
+              end_date: end || null,
+            }],
+          }),
+        });
+        document.getElementById("medName").value = "";
+        document.getElementById("medDose").value = "";
+        loadMedications();
+      } catch (e) {
+        alert("Failed to save: " + e.message);
+      }
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", loadMedications);
+    loadMedications();
+  </script>
+</body>
+</html>

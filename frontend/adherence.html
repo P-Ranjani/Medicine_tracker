@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Adherence - Medication Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <a href="dashboard.html" class="logo">
+        <div class="pill-icon"></div>
+        <div>
+          <div>Medication Tracker</div>
+          <div class="tagline">Reminders · Adherence · Care</div>
+        </div>
+      </a>
+      <div class="flex">
+        <span id="userLabel" class="small-text muted"></span>
+        <a href="login.html" class="btn secondary small" onclick="setCurrentUser(null)">Logout</a>
+      </div>
+    </header>
+
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="ocr.html">OCR Scan</a>
+      <a href="medications.html">Medications</a>
+      <a href="adherence.html" class="active">Adherence</a>
+      <a href="chatbot.html">Chatbot</a>
+      <a href="drug-interactions.html">Drug Interactions</a>
+      <a href="caregiver.html">Caregiver</a>
+    </nav>
+
+    <div class="card">
+      <h1>Adherence Tracking</h1>
+      <p class="small-text muted">Record doses as taken, missed, or skipped. View your adherence summary.</p>
+
+      <div class="divider"></div>
+
+      <h3>Today's medications</h3>
+      <p class="small-text muted">Mark each dose below.</p>
+      <div id="medicationList" class="small-text muted" style="margin-top: 8px;"></div>
+
+      <div class="divider"></div>
+
+      <h3>Adherence summary</h3>
+      <button id="refreshSummaryBtn" class="btn small secondary">Refresh summary</button>
+      <div id="adherenceSummary" class="log small-text" style="margin-top: 10px;"></div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    requirePatient();
+    document.getElementById("userLabel").textContent = getCurrentUser()
+      ? `${getCurrentUser().name} · ${getCurrentUser().email}` : "";
+
+    async function loadMedications() {
+      const container = document.getElementById("medicationList");
+      try {
+        const data = await apiRequest("/api/medications");
+        const meds = data.medications || [];
+        if (!meds.length) {
+          container.textContent = "No medications. Add some in the Medications page.";
+          return;
+        }
+        container.innerHTML = meds
+          .map((m) => {
+            const dates = (m.start_date || m.end_date)
+              ? ` · ${m.start_date || ""}${m.end_date ? " → " + m.end_date : ""}`
+              : "";
+            return `<div style="margin-bottom: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;">
+              <strong>${m.medicine_name}</strong> ${m.dosage || ""} · <span class="tag">${m.schedule_time}</span>${dates}
+              <div class="pill-list">
+                <button class="btn small secondary" data-status="taken" data-id="${m.id}">Taken</button>
+                <button class="btn small secondary" data-status="missed" data-id="${m.id}">Missed</button>
+                <button class="btn small secondary" data-status="skipped" data-id="${m.id}">Skipped</button>
+              </div>
+            </div>`;
+          })
+          .join("");
+        container.classList.remove("muted");
+
+        container.querySelectorAll("button[data-status]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const status = btn.getAttribute("data-status");
+            const medId = Number(btn.getAttribute("data-id"));
+            try {
+              await apiRequest("/api/adherence", {
+                method: "POST",
+                body: JSON.stringify({ medication_id: medId, status }),
+              });
+              loadSummary();
+            } catch (e) {
+              alert("Failed: " + e.message);
+            }
+          });
+        });
+      } catch (e) {
+        container.textContent = "Failed to load: " + e.message;
+      }
+    }
+
+    async function loadSummary() {
+      const box = document.getElementById("adherenceSummary");
+      try {
+        const data = await apiRequest("/api/adherence/summary");
+        const rows = data.summary || [];
+        if (!rows.length) {
+          box.textContent = "No adherence records yet. Mark doses above.";
+          return;
+        }
+        box.textContent = rows
+          .map((r) => `${r.medication}: ${r.taken}/${r.total} taken (${r.adherence_pct}% adherence), missed ${r.missed}`)
+          .join("\n");
+      } catch (e) {
+        box.textContent = "Failed to load: " + e.message;
+      }
+    }
+
+    document.getElementById("refreshSummaryBtn").addEventListener("click", loadSummary);
+    loadMedications();
+    loadSummary();
+  </script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Chatbot - Medication Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <a href="dashboard.html" class="logo">
+        <div class="pill-icon"></div>
+        <div>
+          <div>Medication Tracker</div>
+          <div class="tagline">Reminders · Adherence · Care</div>
+        </div>
+      </a>
+      <div class="flex">
+        <span id="userLabel" class="small-text muted"></span>
+        <a href="login.html" class="btn secondary small" onclick="setCurrentUser(null)">Logout</a>
+      </div>
+    </header>
+
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="ocr.html">OCR Scan</a>
+      <a href="medications.html">Medications</a>
+      <a href="adherence.html">Adherence</a>
+      <a href="chatbot.html" class="active">Chatbot</a>
+      <a href="drug-interactions.html">Drug Interactions</a>
+      <a href="caregiver.html">Caregiver</a>
+    </nav>
+
+    <div class="card">
+      <h1>AI Medication Chatbot</h1>
+      <p class="small-text muted">Ask questions about your medicines. The chatbot uses your medication list as context.</p>
+
+      <div class="divider"></div>
+
+      <div class="stack">
+        <label for="chatQuestion">Your question</label>
+        <textarea id="chatQuestion" rows="4" placeholder="What is Paracetamol used for? What are the side effects of Amoxicillin?"></textarea>
+      </div>
+      <button id="askBtn" class="btn">Ask chatbot</button>
+
+      <div class="divider"></div>
+
+      <h3>Answer</h3>
+      <div id="chatbotAnswer" class="log small-text hidden"></div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    requireAuth();
+    document.getElementById("userLabel").textContent = getCurrentUser()
+      ? `${getCurrentUser().name} · ${getCurrentUser().email}` : "";
+
+    document.getElementById("askBtn").addEventListener("click", async () => {
+      const q = document.getElementById("chatQuestion").value.trim();
+      if (!q) {
+        alert("Type a question first.");
+        return;
+      }
+      const answer = document.getElementById("chatbotAnswer");
+      answer.textContent = "Thinking...";
+      answer.classList.remove("hidden");
+      try {
+        const data = await apiRequest("/api/chatbot", {
+          method: "POST",
+          body: JSON.stringify({ question: q }),
+        });
+        answer.textContent = data.answer || "(No answer returned.)";
+      } catch (e) {
+        answer.textContent = "Error: " + e.message;
+      }
+    });
+  </script>
+</body>
+</html>

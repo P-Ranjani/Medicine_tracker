@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Drug Interactions - Medication Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <a href="dashboard.html" class="logo">
+        <div class="pill-icon"></div>
+        <div>
+          <div>Medication Tracker</div>
+          <div class="tagline">Reminders · Adherence · Care</div>
+        </div>
+      </a>
+      <div class="flex">
+        <span id="userLabel" class="small-text muted"></span>
+        <a href="login.html" class="btn secondary small" onclick="setCurrentUser(null)">Logout</a>
+      </div>
+    </header>
+
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="ocr.html">OCR Scan</a>
+      <a href="medications.html">Medications</a>
+      <a href="adherence.html">Adherence</a>
+      <a href="chatbot.html">Chatbot</a>
+      <a href="drug-interactions.html" class="active">Drug Interactions</a>
+      <a href="caregiver.html">Caregiver</a>
+    </nav>
+
+    <div class="card">
+      <h1>Drug Interaction Checker</h1>
+      <p class="small-text muted">Enter medicine names to check for potential interactions. Data from OpenFDA. Always consult a healthcare professional.</p>
+
+      <div class="divider"></div>
+
+      <div class="stack">
+        <label for="interactionMeds">Medicines (comma separated)</label>
+        <input id="interactionMeds" type="text" placeholder="Paracetamol, Warfarin, Aspirin" />
+      </div>
+      <button id="checkBtn" class="btn secondary">Check interactions</button>
+
+      <div class="divider"></div>
+
+      <h3>Results</h3>
+      <div id="interactionResults" class="log small-text hidden"></div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    requireAuth();
+    document.getElementById("userLabel").textContent = getCurrentUser()
+      ? `${getCurrentUser().name} · ${getCurrentUser().email}` : "";
+
+    document.getElementById("checkBtn").addEventListener("click", async () => {
+      const raw = document.getElementById("interactionMeds").value.trim();
+      if (!raw) {
+        alert("Enter at least one medicine name.");
+        return;
+      }
+      const meds = raw.split(",").map((m) => m.trim());
+      const results = document.getElementById("interactionResults");
+      results.textContent = "Checking...";
+      results.classList.remove("hidden");
+      try {
+        const data = await apiRequest("/api/drug/interactions", {
+          method: "POST",
+          body: JSON.stringify({ medicines: meds }),
+        });
+        const list = data.interactions || [];
+        if (!list.length) {
+          results.textContent = "No interaction information returned. This does not guarantee safety. Always consult a healthcare professional.";
+          return;
+        }
+        results.textContent = list
+          .map((r) => `${r.medicine}:\n${(r.raw_interaction_info || []).join("\n")}\n\nNote: ${r.note}`)
+          .join("\n\n---\n\n");
+      } catch (e) {
+        results.textContent = "Failed: " + e.message;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Caregiver Dashboard - Medication Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <a href="caregiver.html" class="logo">
+        <div class="pill-icon"></div>
+        <div>
+          <div>Medication Tracker</div>
+          <div class="tagline">Reminders · Adherence · Care</div>
+        </div>
+      </a>
+      <div class="flex">
+        <span id="userLabel" class="small-text muted"></span>
+        <a href="login.html" class="btn secondary small" onclick="setCurrentUser(null)">Logout</a>
+      </div>
+    </header>
+
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="ocr.html">OCR Scan</a>
+      <a href="medications.html">Medications</a>
+      <a href="adherence.html">Adherence</a>
+      <a href="chatbot.html">Chatbot</a>
+      <a href="drug-interactions.html">Drug Interactions</a>
+      <a href="caregiver.html" class="active">Caregiver</a>
+    </nav>
+
+    <div class="card">
+      <h1>Caregiver Home</h1>
+      <p class="small-text muted">Monitor the people you care for and stay informed about their medications.</p>
+
+      <div class="home-intro">
+        <strong>About the Caregiver Dashboard</strong>
+        <p>As a caregiver (family member, spouse, or helper), you can:</p>
+        <ul>
+          <li><strong>View linked patients</strong> — See everyone who has added your email as their caregiver.</li>
+          <li><strong>See medication lists</strong> — Check what medicines each patient is taking, dosages, and schedule times.</li>
+          <li><strong>Get missed-dose alerts</strong> — When a patient marks a dose as missed, you receive an alert (email or in-app) so you can follow up.</li>
+          <li><strong>Support adherence</strong> — Use the adherence summary to see how well they’re following their schedule and when they might need a reminder or help.</li>
+        </ul>
+        <p>Patients must add your email when they register (or in their account) and choose you as their caregiver to link you.</p>
+      </div>
+
+      <div class="reminder-box">
+        <h3>🔔 Reminders for you (Caregiver)</h3>
+        <p><strong>You get reminders when:</strong> A linked patient marks a dose as <strong>missed</strong>. The app sends you an alert with the patient’s name, the medicine, and the scheduled time so you can check in or remind them.</p>
+        <p>Use the button below to load your linked patients and their current medications. Check this page regularly to see their status and any missed doses.</p>
+        <span class="small-text muted">Alerts may be sent by email or in-app notification depending on setup.</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3>My patients</h3>
+      <button id="loadBtn" class="btn">Load my patients</button>
+
+      <div class="divider"></div>
+
+      <h3>Patient list</h3>
+      <div id="patientsList" class="log small-text hidden"></div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const user = requireAuth();
+    if (user) {
+      document.getElementById("userLabel").textContent = `${user.name} · ${user.email} (${user.role})`;
+      if (user.role !== "caregiver") {
+        document.querySelector(".card p").textContent = "This page is for caregivers. Patients can still use other modules.";
+      }
+    }
+
+    document.getElementById("loadBtn").addEventListener("click", async () => {
+      const user = getCurrentUser();
+      const box = document.getElementById("patientsList");
+      if (!user || user.role !== "caregiver") {
+        box.textContent = "Log in as a caregiver to view linked patients.";
+        box.classList.remove("hidden");
+        return;
+      }
+      box.textContent = "Loading...";
+      box.classList.remove("hidden");
+      try {
+        const data = await apiRequest("/api/caregiver/patients");
+        const patients = data.patients || [];
+        if (!patients.length) {
+          box.textContent = "No linked patients yet. Patients must add your email when registering.";
+          return;
+        }
+        box.textContent = patients
+          .map((p) => {
+            const meds = p.medications || [];
+            const medLines = meds.length
+              ? meds
+                  .map((m) => `  - ${m.medicine_name} ${m.dosage || ""} at ${m.schedule_time}${m.start_date ? ` (from ${m.start_date}` : ""}${m.end_date ? ` to ${m.end_date})` : m.start_date ? ")" : ""}`)
+                  .join("\n")
+              : "  (no medications)";
+            return `Patient: ${p.patient.name} (${p.patient.email})\n${medLines}`;
+          })
+          .join("\n\n---\n\n");
+      } catch (e) {
+        box.textContent = "Failed: " + e.message;
+      }
+    });
+  </script>
+</body>
+</html>
