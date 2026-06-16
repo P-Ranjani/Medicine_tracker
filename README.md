@@ -42,7 +42,7 @@ The API will run on `http://127.0.0.1:5000`.
 - `backend/` – Flask app, OCR, chatbot, reminder engine, drug interaction
 - `database/` – Database models and initialization
 - `notifications/` – Email / alert helpers
-- `frontend/` – React / JS frontend (to be added)
+- `frontend/` – HTML, JS
 
 ## Main Features
 
